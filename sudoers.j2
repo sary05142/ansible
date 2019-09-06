@@ -1,0 +1,5 @@
+{% if enable_sudo_with_nopasswd == yes %}}
+{{ ansible_manage_user }} ALL=(ALL) NOPASSWD:ALL
+{% else %}}
+{{ ansible_manage_user }} ALL=(ALL) ALL
+{% endif %}}

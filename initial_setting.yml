@@ -1,0 +1,41 @@
+---
+- name: create general user
+  hosts: all
+  remote_user: root
+
+  vars:
+    ansible_manage_user: "ansible"
+    enable_sudo_with_nopasswd: yes
+    install_packages:
+  
+  tasks:
+    - name: create ansible general user
+      user:
+        name: "{{ ansible_manage_user }}"
+        state: present
+    - name: enable sudo settings
+      template:
+        src: sudoers.j2
+        dest: /etc/sudoers.d/{{ ansible_manage_user }}
+    - name: copy ansible-server's public key file
+      authorized_key:
+        user: "{{ ansible_manage_user }}"
+        key: "{{ lookup('file','/home/{{ ansible_manage_user }}/.ssh/id_rsa.pub') }}"
+    - name: Disable ssh password authentication
+      lineinfile:
+        path: "/etc/ssh/sshd_config"
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication yes"
+        insertafter: "#PasswordAuthentication"
+      notify:
+        - Restart sshd service
+      tags: secure
+    - name: Install server packages
+      yum:
+        name: "{{ install_packages }}"
+        state: present
+      when: install_packages is defined
+    - name: Update all installed packages
+      yum:
+        name: "*"
+        state: latest
